@@ -41,7 +41,6 @@ class ProcessQueue {
 	//Queue chua cac tien trinh duoc nhap vao
 	vector<Process> Queue;
 
-
 	//NewQueue chua cac tien trinh duoc sap xep theo Arrival time
 	vector<NewProcess>NewQueue;
 
@@ -93,53 +92,62 @@ public:
 		}
 	}
 
-
-
 	void process_scheduler() {
 		sort_by_arrival_time();
 		int current_time = NewQueue[0].arr;
-		for (int i = 0, remaining = n; remaining; i++) {
-			for (int j = i; j < n; j++) {
-				if (NewQueue[j].arr == current_time) {
-					ReadyQueue.push_back(ReadyProcess(NewQueue[j].pn, Queue[NewQueue[j].pn]));
+		for (int i = 0, remaining = n; remaining;) {
+
+			//Them tat ca cac tien trinh co Arrival Time = current_time vao ReadyQueue
+			for (; i < n && NewQueue[i].arr == current_time; i++) {
+				ReadyQueue.push_back(ReadyProcess(NewQueue[i].pn, Queue[NewQueue[i].pn]));
+			}
+
+			//Neu cac tien trinh khong lien tiep
+			if (ReadyQueue.empty()) {
+				current_time = NewQueue[i].arr;
+			}
+			else {
+				//Sap Xep lai cac Process trong RaedyQueue
+				sort_by_burst_time();
+				int session_time = 0;
+
+				if (i < n)
+					session_time = min(NewQueue[i].arr - current_time, ReadyQueue[0].bur);
+				else
+					session_time = ReadyQueue[0].bur;
+
+				/*for (int t = 1; t < ReadyQueue.size(); t++) {
+					Queue[ReadyQueue[t].pn].wt += session_time;
 				}
-				else break;
-			}
-			sort_by_burst_time();
-			int session_time = 0;
-			if (i + 1 < n) session_time = min(NewQueue[i + 1].arr - current_time, ReadyQueue[0].bur);
-			else session_time = ReadyQueue[0].bur;
-			for (int t = 1; t < ReadyQueue.size(); t++) {
-				Queue[ReadyQueue[t].pn].wt += session_time;
-			}
-			cout << "Current time: " << current_time << " Session time: " << session_time << " Current Process: " << Queue[ReadyQueue[0].pn].pn
-				<< endl;
-			if (Queue[ReadyQueue[0].pn].star == -1) 
-				Queue[ReadyQueue[0].pn].star = current_time;
+				cout << "i: "<<i << " Current time: " << current_time << " Session time: " << session_time << " Current Process: " << Queue[ReadyQueue[0].pn].pn
+					<< endl;*/
 
-			ReadyQueue[0].bur -= session_time;
-			current_time += session_time;
-			if (ReadyQueue[0].bur == 0) {
-				Queue[ReadyQueue[0].pn].finish = current_time;
-				ReadyQueue.erase(ReadyQueue.begin());
-				remaining--;
-			}
+				if (Queue[ReadyQueue[0].pn].star == -1)
+					Queue[ReadyQueue[0].pn].star = current_time;
 
+				ReadyQueue[0].bur -= session_time;
+				current_time += session_time;
+				if (ReadyQueue[0].bur == 0) {
+					Queue[ReadyQueue[0].pn].finish = current_time;
+					ReadyQueue.erase(ReadyQueue.begin());
+					remaining--;
+				}
+			}
 		}
 		for (int i = 0; i < n; i++) {
 			Queue[i].tat = Queue[i].finish - Queue[i].arr;
+			Queue[i].wt = Queue[i].tat - Queue[i].bur;
 		}
 	}
-	
-	//Ham sort tien trinh trong Queue theo Arrival Time 
-	
+
 	void process_output() {
 		printf("PName Arrtime Burtime Start Wait TAT Finish:");
 		for (int i = 0; i < n; i++) {
-			printf("\n%d\t%6d\t%6d\t%6d\t%6d\t%6d\t%6d", Queue[i].pn, Queue[i].arr, Queue[i].bur, Queue[i].star, Queue[i].wt, Queue[i].tat, Queue[i].finish);
+			printf("\n%d%6d\t%6d\t%6d\t%6d\t%6d\t%6d", Queue[i].pn, Queue[i].arr, Queue[i].bur, Queue[i].star, Queue[i].wt, Queue[i].tat, Queue[i].finish);
 			totwt += Queue[i].wt;
 			tottat += Queue[i].tat;
 		}
+		cout << "\nAverage Turn Around Time: " << (float)tottat / n << endl;
 	}
 	ProcessQueue operator=(ProcessQueue pq) {
 		this->n = pq.n;
